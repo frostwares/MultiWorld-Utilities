@@ -271,9 +271,8 @@ def main(args, seed=None):
             with open(output_path('%s_multidata' % outfilebase), 'wb') as f:
                 f.write(multidata)
 
-    if not args.skip_playthrough:
-        logger.info('Calculating playthrough.')
-        create_playthrough(world)
+    logger.info('Calculating playthrough.')
+    create_playthrough(world, args.skip_playthrough)
 
     if args.jsonout:
         print(json.dumps({**jsonout, 'spoiler': world.spoiler.to_json()}))
@@ -411,7 +410,7 @@ def copy_dynamic_regions_and_locations(world, ret):
         ret.clear_location_cache()
 
 
-def create_playthrough(world):
+def create_playthrough(world, skip_spheres):
     # create a copy as we will modify it
     old_world = world
     world = copy_world(world)
@@ -453,31 +452,32 @@ def create_playthrough(world):
                 old_world.spoiler.unreachables = sphere_candidates.copy()
                 break
 
-    # in the second phase, we cull each sphere such that the game is still beatable, reducing each range of influence to the bare minimum required inside it
-    for num, sphere in reversed(list(enumerate(collection_spheres))):
-        to_delete = []
-        for location in sphere:
-            # we remove the item at location and check if game is still beatable
-            logging.getLogger('').debug('Checking if %s (Player %d) is required to beat the game.', location.item.name, location.item.player)
-            old_item = location.item
-            location.item = None
-            if world.can_beat_game(state_cache[num]):
-                to_delete.append(location)
-            else:
-                # still required, got to keep it around
-                location.item = old_item
+    if not skip_spheres:
+        # in the second phase, we cull each sphere such that the game is still beatable, reducing each range of influence to the bare minimum required inside it
+        for num, sphere in reversed(list(enumerate(collection_spheres))):
+            to_delete = []
+            for location in sphere:
+                # we remove the item at location and check if game is still beatable
+                logging.getLogger('').debug('Checking if %s (Player %d) is required to beat the game.', location.item.name, location.item.player)
+                old_item = location.item
+                location.item = None
+                if world.can_beat_game(state_cache[num]):
+                    to_delete.append(location)
+                else:
+                    # still required, got to keep it around
+                    location.item = old_item
 
-        # cull entries in spheres for spoiler walkthrough at end
-        for location in to_delete:
-            sphere.remove(location)
+            # cull entries in spheres for spoiler walkthrough at end
+            for location in to_delete:
+                sphere.remove(location)
 
-    # second phase, sphere 0
-    for item in [i for i in world.precollected_items if i.advancement]:
-        logging.getLogger('').debug('Checking if %s (Player %d) is required to beat the game.', item.name, item.player)
-        world.precollected_items.remove(item)
-        world.state.remove(item)
-        if not world.can_beat_game():
-            world.push_precollected(item)
+        # second phase, sphere 0
+        for item in [i for i in world.precollected_items if i.advancement]:
+            logging.getLogger('').debug('Checking if %s (Player %d) is required to beat the game.', item.name, item.player)
+            world.precollected_items.remove(item)
+            world.state.remove(item)
+            if not world.can_beat_game():
+                world.push_precollected(item)
 
     # we are now down to just the required progress items in collection_spheres. Unfortunately
     # the previous pruning stage could potentially have made certain items dependant on others
@@ -531,5 +531,6 @@ def create_playthrough(world):
 
     # we can finally output our playthrough
     old_world.spoiler.playthrough = OrderedDict([("0", [str(item) for item in world.precollected_items if item.advancement])])
-    for i, sphere in enumerate(collection_spheres):
-        old_world.spoiler.playthrough[str(i + 1)] = {str(location): str(location.item) for location in sphere}
+    if not skip_spheres:
+        for i, sphere in enumerate(collection_spheres):
+            old_world.spoiler.playthrough[str(i + 1)] = {str(location): str(location.item) for location in sphere}
