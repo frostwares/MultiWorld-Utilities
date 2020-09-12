@@ -1,9 +1,9 @@
 import logging
 
-from BaseClasses import Item
 
 
 def ItemFactory(items, player):
+    from BaseClasses import Item
     ret = []
     singleton = False
     if isinstance(items, str):
@@ -28,7 +28,7 @@ item_table = {'Bow': (True, False, None, 0x0B, 'You have\nchosen the\narcher cla
               'Progressive Bow (Alt)': (True, False, None, 0x65, 'You have\nchosen the\narcher class.', 'the stick and twine', 'arrow-slinging kid', 'arrow sling for sale', 'witch and robin hood', 'archer boy shoots again', 'a Bow'),
               'Silver Arrows': (True, False, None, 0x58, 'Do you fancy\nsilver tipped\narrows?', 'and the ganonsbane','ganon-killing kid', 'ganon doom for sale', 'fungus for pork','archer boy shines again', 'the Silver Arrows'),
               'Silver Bow': (True, False, None, 0x3B, 'Buy 1 Silver\nget Archery\nfor free.', 'the baconmaker', 'ganon-killing kid', 'ganon doom for sale', 'fungus for pork', 'archer boy shines again', 'the Silver Bow'),
-              'Book of Mudora': (True, False, None, 0x1D, 'This is a\nparadox?!', 'and the story book', 'the scholarly kid', 'moon runes for sale', 'drugs for literacy', 'book-worm boy can read again', 'the Book'),
+              'Book of Mudora': (True, False, None, 0x1D, 'Hylian\nfor\nDingusses.', 'and the story book', 'the scholarly kid', 'moon runes for sale', 'drugs for literacy', 'book-worm boy can read again', 'the Book'),
               'Hammer': (True, False, None, 0x09, 'stop\nhammer time!', 'and m c hammer', 'hammer-smashing kid', 'm c hammer for sale', 'stop...   hammer time', 'stop, hammer time', 'the Hammer'),
               'Hookshot': (True, False, None, 0x0A, 'BOING!!!\nBOING!!!\nBOING!!!', 'and the tickle beam', 'tickle-monster kid', 'tickle beam for sale', 'witch and tickle boy', 'beam boy tickles again', 'the Hookshot'),
               'Magic Mirror': (True, False, None, 0x1A, 'Isn\'t your\nreflection so\npretty?', 'the face reflector', 'the narcissistic kid', 'your face for sale', 'trades looking-glass', 'narcissistic boy is happy again', 'the Mirror'),
@@ -76,7 +76,7 @@ item_table = {'Bow': (True, False, None, 0x0B, 'You have\nchosen the\narcher cla
               'Crystal 6': (True, False, 'Crystal', (0x01, 0x32, 0x64, 0x40, 0x6F, 0x06), None, None, None, None, None, None, None),
               'Crystal 7': (True, False, 'Crystal', (0x08, 0x34, 0x64, 0x40, 0x7C, 0x06), None, None, None, None, None, None, None),
               'Single Arrow': (False, False, None, 0x43, 'a lonely arrow\nsits here.', 'and the arrow', 'stick-collecting kid', 'sewing needle for sale', 'fungus for arrow', 'archer boy sews again', 'an arrow'),
-              'Arrows (10)': (False, False, None, 0x44, 'This will give\nyou ten shots\nwith your bow!', 'and the arrow pack', 'stick-collecting kid', 'sewing kit for sale', 'fungus for arrows', 'archer boy sews again', 'ten arrows'),
+              'Arrows (10)': (False, False, None, 0x44, 'This will give\nyou ten shots\nwith your bow!', 'and the arrow pack','stick-collecting kid', 'sewing kit for sale', 'fungus for arrows', 'archer boy sews again','ten arrows'),
               'Arrow Upgrade (+10)': (False, False, None, 0x54, 'increase arrow\nstorage, low\nlow price', 'and the quiver', 'quiver-enlarging kid', 'arrow boost for sale', 'witch and more skewers', 'upgrade boy sews more again', 'arrow capacity'),
               'Arrow Upgrade (+5)': (False, False, None, 0x53, 'increase arrow\nstorage, low\nlow price', 'and the quiver', 'quiver-enlarging kid', 'arrow boost for sale', 'witch and more skewers', 'upgrade boy sews more again', 'arrow capacity'),
               'Single Bomb': (False, False, None, 0x27, 'I make things\ngo BOOM! But\njust once.', 'and the explosion', 'the bomb-holding kid', 'firecracker for sale', 'blend fungus into bomb', '\'splosion boy explodes again', 'a bomb'),
@@ -86,7 +86,7 @@ item_table = {'Bow': (True, False, None, 0x0B, 'You have\nchosen the\narcher cla
               'Bomb Upgrade (+5)': (False, False, None, 0x51, 'increase bomb\nstorage, low\nlow price', 'and the bomb bag', 'boom-enlarging kid', 'bomb boost for sale', 'the shroom goes boom', 'upgrade boy explodes more again', 'bomb capacity'),
               'Blue Mail': (False, True, None, 0x22, 'Now you\'re a\nblue elf!', 'and the banana hat', 'the protected kid', 'banana hat for sale', 'the clothing store', 'tailor boy banana hatted again', 'the Blue Mail'),
               'Red Mail': (False, True, None, 0x23, 'Now you\'re a\nred elf!', 'and the eggplant hat', 'well-protected kid', 'purple hat for sale', 'the nice clothing store', 'tailor boy fears nothing again', 'the Red Mail'),
-              'Progressive Armor': (False, True, None, 0x60, 'time for a\nchange of\nclothes?', 'and the unknown hat', 'the protected kid', 'new hat for sale', 'the clothing store', 'tailor boy has threads again', 'some armor'),
+              'Progressive Mail': (False, True, None, 0x60, 'time for a\nchange of\nclothes?', 'and the unknown hat', 'the protected kid', 'new hat for sale', 'the clothing store', 'tailor boy has threads again', 'some armor'),
               'Blue Boomerang': (True, False, None, 0x0C, 'No matter what\nyou do, blue\nreturns to you', 'and the bluemarang', 'the bat-throwing kid', 'bent stick for sale', 'fungus for puma-stick', 'throwing boy plays fetch again', 'the Blue Boomerang'),
               'Red Boomerang': (True, False, None, 0x2A, 'No matter what\nyou do, red\nreturns to you', 'and the badmarang', 'the bat-throwing kid', 'air foil for sale', 'fungus for return-stick', 'magical boy plays fetch again', 'the Red Boomerang'),
               'Blue Shield': (False, True, None, 0x04, 'Now you can\ndefend against\npebbles!', 'and the stone blocker', 'shield-wielding kid', 'shield for sale', 'fungus for shield', 'shield boy defends again', 'the Blue Shield'),
@@ -186,11 +186,22 @@ lookup_id_to_name = {data[3]: name for name, data in item_table.items()}
 
 hint_blacklist = {"Triforce"}
 
-item_name_groups = {"Bows": {"Bow", "Silver Arrows", "Silver Bow", "Progressive Bow (Alt)", "Progressive Bow"},
-                    "Gloves": {"Power Glove", "Progressive Glove", "Titans Mitts"},
-                    "Medallions": {"Ether", "Bombos", "Quake"}}
+item_name_groups = {"Bows":
+                        {"Bow", "Silver Arrows", "Silver Bow", "Progressive Bow (Alt)", "Progressive Bow"},
+                    "Gloves":
+                        {"Power Glove", "Progressive Glove", "Titans Mitts"},
+                    "Medallions":
+                        {"Ether", "Bombos", "Quake"}}
 # generic groups, (Name, substring)
 _simple_groups = {("Swords", "Sword"),
+                  ("Shields", "Shield"),
+                  ("Mails", "Mail"),
+
+                  ("Boomerangs", "Boomerang"),
+                  ("Rods", "Rod"),
+                  ("Canes", "Cane"),
+
+                  ("Upgrades", "Upgrade"), # Capacity and Magic Upgrades
 
                   ("Small Keys", "Small Key"),
                   ("Big Keys", "Big Key"),
@@ -200,7 +211,10 @@ _simple_groups = {("Swords", "Sword"),
                   ("Bottles", "Bottle"),
                   ("Potions", "Potion"),
                   ("Rupees", "Rupee"),
-                  ("Clocks", "Clock")
+                  ("Clocks", "Clock"),
+
+                  ("Crystals", "Crystal"),
+                  ("Pendants", "Pendant")
                   }
 for basename, substring in _simple_groups:
     tempset = item_name_groups[basename] = set()

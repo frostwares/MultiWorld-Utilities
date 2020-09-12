@@ -9,6 +9,7 @@ from flask import request, flash, redirect, url_for, session, render_template
 from EntranceRandomizer import parse_arguments
 from Main import main as ERmain
 from Main import get_seed, seeddigits
+import pickle
 
 from .models import *
 from WebHostLib import app
@@ -32,17 +33,28 @@ def generate(race=False):
                 if any(type(result) == str for result in results.values()):
                     return render_template("checkresult.html", results=results)
                 elif len(gen_options) > app.config["MAX_ROLL"]:
-                    flash(f"Sorry, generating of multiworld is limited to {app.config['MAX_ROLL']} players for now. "
+                    flash(f"Sorry, generating of multiworlds is limited to {app.config['MAX_ROLL']} players for now. "
                           f"If you have a larger group, please generate it yourself and upload it.")
+                elif len(gen_options) >= app.config["JOB_THRESHOLD"]:
+                    gen = Generation(
+                        options=pickle.dumps({name: vars(options) for name, options in gen_options.items()}),
+                        # convert to json compatible
+                        meta=pickle.dumps({"race": race}), state=STATE_QUEUED,
+                        owner=session["_id"])
+                    commit()
+
+                    return redirect(url_for("wait_seed", seed=gen.id))
                 else:
-                    seed_id = gen(gen_options, race=race)
+                    seed_id = gen_game({name: vars(options) for name, options in gen_options.items()},
+                                       race=race, owner=session["_id"].int)
                     return redirect(url_for("view_seed", seed=seed_id))
+
     return render_template("generate.html", race=race)
 
 
-def gen(gen_options, race=False):
-    target = tempfile.TemporaryDirectory()
-    with target:
+def gen_game(gen_options, race=False, owner=None, sid=None):
+    try:
+        target = tempfile.TemporaryDirectory()
         playercount = len(gen_options)
         seed = get_seed()
         random.seed(seed)
@@ -65,7 +77,7 @@ def gen(gen_options, race=False):
         erargs.create_diff = True
 
         for player, (playerfile, settings) in enumerate(gen_options.items(), 1):
-            for k, v in vars(settings).items():
+            for k, v in settings.items():
                 if v is not None:
                     getattr(erargs, k)[player] = v
 
@@ -79,10 +91,33 @@ def gen(gen_options, race=False):
                                              erargs.progression_balancing.items()}
         del (erargs.progression_balancing)
         ERmain(erargs, seed)
-        return upload_to_db(target.name)
+
+        return upload_to_db(target.name, owner, sid)
+    except BaseException:
+        if sid:
+            with db_session:
+                gen = Generation.get(id=sid)
+                if gen is not None:
+                    gen.state = STATE_ERROR
+        raise
 
 
-def upload_to_db(folder):
+@app.route('/wait/<suuid:seed>')
+def wait_seed(seed: UUID):
+    seed_id = seed
+    seed = Seed.get(id=seed_id)
+    if seed:
+        return redirect(url_for("view_seed", seed=seed_id))
+    generation = Generation.get(id=seed_id)
+
+    if not generation:
+        return "Generation not found."
+    elif generation.state == STATE_ERROR:
+        return "Generation failed, please retry."
+    return render_template("wait_seed.html", seed_id=seed_id)
+
+
+def upload_to_db(folder, owner, sid):
     patches = set()
     spoiler = ""
     multidata = None
@@ -99,9 +134,15 @@ def upload_to_db(folder):
             except Exception as e:
                 flash(e)
     if multidata:
-        commit()  # commit patches
-        seed = Seed(multidata=multidata, spoiler=spoiler, patches=patches, owner=session["_id"])
-        commit()  # create seed
-        for patch in patches:
-            patch.seed = seed
+        with db_session:
+            if sid:
+                seed = Seed(multidata=multidata, spoiler=spoiler, patches=patches, owner=owner, id=sid)
+            else:
+                seed = Seed(multidata=multidata, spoiler=spoiler, patches=patches, owner=owner)
+            for patch in patches:
+                patch.seed = seed
+            if sid:
+                gen = Generation.get(id=sid)
+                if gen is not None:
+                    gen.delete()
         return seed.id

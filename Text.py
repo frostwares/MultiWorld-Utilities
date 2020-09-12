@@ -84,13 +84,13 @@ Uncle_texts = [
     "Gonna shuffle\nall the items\nreal quick.",
 ]
 Triforce_texts = [
-    'Product has Hole in center. Bad seller, 0 out of 5.',
-    'Who stole the fourth triangle?',
-    'Trifource?\nMore Like Tritrice, am I right?'
-    '\n  Well Done!',
-    'You just wasted 2 hours of your life.',
-    'This was meant to be a trapezoid'
-    "\n   Success!", #Contributed by caitsith2
+                     'Product has Hole in center. Bad seller, 0 out of 5.',
+                     'Who stole the fourth triangle?',
+                     'Trifource?\nMore Like Tritrice, am I right?'
+                     '\n  Well Done!',
+                     'You just wasted 2 hours of your life.',
+                     'This was meant to be a trapezoid\n   Success!',  # Contributed by caitsith2
+                     'This was meant to be a trapezoid',
                  ] * 2 + [
     "\n     GG",
     "All your base\nare belong\nto us.",
@@ -155,7 +155,7 @@ Blind_texts = [
     "Archers give\ngifts tied\nwith a bow.",
     "A healed\ngambler is\nall better.",
     "Any old sword\nwill make the\ncut here.",
-    "Lazy wyrms\nkeep dragin'\ntheir feet.",
+    "Lazy wyrms\nkeep dragon\ntheir feet.",
     "Percussionist\nmasters drum\nup audiences.",
     "Retrievers\nlove fetch\nquests.",
     "Sausage is\nthe wurst.",
@@ -1686,9 +1686,11 @@ class TextTable(object):
         text['telepathic_tile_thieves_town_upstairs'] = CompressedTextMapper.convert("{NOBORDER}\nBlind hate's bright light.")
         text['telepathic_tile_misery_mire'] = CompressedTextMapper.convert("{NOBORDER}\nLighting 4 torches will open your way forward!")
         text['hylian_text_2'] = CompressedTextMapper.convert("%%^= %==%\n ^ =%^=\n==%= ^^%^")
-        text['desert_entry_translated'] = CompressedTextMapper.convert("Kneel before this stone, and magic will move around you.")
-        text['telepathic_tile_under_ganon'] = CompressedTextMapper.convert("Secondary tournament winners\n{HARP}\n  ~~~2017~~~\nA: Zaen")
-        text['telepathic_tile_palace_of_darkness'] = CompressedTextMapper.convert("{NOBORDER}\nThis is a funny looking Enemizer")
+        text['desert_entry_translated'] = CompressedTextMapper.convert(
+            "Kneel before this stone, and magic will move around you.")
+        text['telepathic_tile_under_ganon'] = CompressedTextMapper.convert("Haha")
+        text['telepathic_tile_palace_of_darkness'] = CompressedTextMapper.convert(
+            "{NOBORDER}\nThis is a funny looking Enemizer")
         # C0
         text['telepathic_tile_desert_bonk_torch_room'] = CompressedTextMapper.convert("{NOBORDER}\nThings can be knocked down, if you fancy yourself a dashing dude.")
         text['telepathic_tile_castle_tower'] = CompressedTextMapper.convert("{NOBORDER}\nYou can reflect Agahnim's energy with Sword, Bug-net or Hammer.")
@@ -1696,8 +1698,10 @@ class TextTable(object):
         text['telepathic_tile_turtle_rock'] = CompressedTextMapper.convert("{NOBORDER}\nYou shall not pass… without the red cane")
         text['telepathic_tile_ice_entrace'] = CompressedTextMapper.convert("{NOBORDER}\nYou can use Fire Rod or Bombos to pass.")
         text['telepathic_tile_ice_stalfos_knights_room'] = CompressedTextMapper.convert("{NOBORDER}\nKnock 'em down and then bomb them dead.")
-        text['telepathic_tile_tower_of_hera_entrance'] = CompressedTextMapper.convert("{NOBORDER}\nThis is a bad place, with a guy who will make you fall…\n\n\na lot.")
-        text['houlihan_room'] = CompressedTextMapper.convert("Randomizer tournament winners\n{HARP}\n  ~~~2018~~~\nS: Andy\n\n  ~~~2017~~~\nA: ajneb174\nS: ajneb174")
+        text['telepathic_tile_tower_of_hera_entrance'] = CompressedTextMapper.convert(
+            "{NOBORDER}\nThis is a bad place, with a guy who will make you fall…\n\n\na lot.")
+        text['houlihan_room'] = CompressedTextMapper.convert(
+            "Have a Multiworld Tournament\nand we can list the winners here.")
         text['caught_a_bee'] = CompressedTextMapper.convert("Caught a Bee\n  ≥ keep\n    release\n{CHOICE}")
         text['caught_a_fairy'] = CompressedTextMapper.convert("Caught Fairy!\n  ≥ keep\n    release\n{CHOICE}")
         text['no_empty_bottles'] = CompressedTextMapper.convert("Whoa, bucko!\nNo empty bottles.")
@@ -1788,7 +1792,7 @@ class TextTable(object):
             + "{PAUSE3}\ninto the rainy night.\n{PAUSE3}\n{CHANGEPIC}\nGanon has moved around all the items in Hyrule.\n"
             + "{PAUSE7}\nYou will have to find all the items necessary to beat Ganon.\n"
             + "{PAUSE7}\nThis is your chance to be a hero.\n{PAUSE3}\n{CHANGEPIC}\n"
-            + "You must get the 7 crystals to beat Ganon.\n{PAUSE9}\n{CHANGEPIC}", False)
+            + "You should probably beat Ganon.\n{PAUSE9}\n{CHANGEPIC}", False)
         text['intro_throne_room'] = CompressedTextMapper.convert("{IBOX}\nLook at this Stalfos on the throne.", False)
         text['intro_zelda_cell'] = CompressedTextMapper.convert("{IBOX}\nIt is your time to shine!", False)
         text['intro_agahnim'] = CompressedTextMapper.convert("{IBOX}\nAlso, you need to defeat this guy!", False)

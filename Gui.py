@@ -9,6 +9,7 @@ import shutil
 from tkinter import Checkbutton, OptionMenu, Toplevel, LabelFrame, PhotoImage, Tk, LEFT, RIGHT, BOTTOM, TOP, StringVar, IntVar, Frame, Label, W, E, X, BOTH, Entry, Spinbox, Button, filedialog, messagebox, ttk
 from urllib.parse import urlparse
 from urllib.request import urlopen
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import ModuleUpdate
 ModuleUpdate.update()
@@ -67,27 +68,42 @@ def guiMain(args=None):
     openpyramidCheckbutton = Checkbutton(checkBoxFrame, text="Pre-open Pyramid Hole", variable=openpyramidVar)
     mcsbshuffleFrame = Frame(checkBoxFrame)
     mcsbLabel = Label(mcsbshuffleFrame, text="Shuffle: ")
+
     mapshuffleVar = IntVar()
     mapshuffleCheckbutton = Checkbutton(mcsbshuffleFrame, text="Maps", variable=mapshuffleVar)
+
     compassshuffleVar = IntVar()
     compassshuffleCheckbutton = Checkbutton(mcsbshuffleFrame, text="Compasses", variable=compassshuffleVar)
-    keyshuffleVar = IntVar()
-    keyshuffleCheckbutton = Checkbutton(mcsbshuffleFrame, text="Keys", variable=keyshuffleVar)
+
     bigkeyshuffleVar = IntVar()
-    bigkeyshuffleCheckbutton = Checkbutton(mcsbshuffleFrame, text="BigKeys", variable=bigkeyshuffleVar)
+    bigkeyshuffleCheckbutton = Checkbutton(mcsbshuffleFrame, text="Big Keys", variable=bigkeyshuffleVar)
+
+    keyshuffleFrame = Frame(checkBoxFrame)
+    keyshuffleVar = StringVar()
+    keyshuffleVar.set('off')
+    modeOptionMenu = OptionMenu(keyshuffleFrame, keyshuffleVar, 'off', 'universal', 'on')
+    modeLabel = Label(keyshuffleFrame, text='Small Key Shuffle')
+    modeLabel.pack(side=LEFT)
+    modeOptionMenu.pack(side=LEFT)
+
     retroVar = IntVar()
-    retroCheckbutton = Checkbutton(checkBoxFrame, text="Retro mode (universal keys)", variable=retroVar)
+    retroCheckbutton = Checkbutton(checkBoxFrame, text="Retro mode", variable=retroVar)
+
     shuffleGanonVar = IntVar()
-    shuffleGanonVar.set(1) #set default
-    shuffleGanonCheckbutton = Checkbutton(checkBoxFrame, text="Include Ganon's Tower and Pyramid Hole in shuffle pool", variable=shuffleGanonVar)
+    shuffleGanonVar.set(1)  # set default
+    shuffleGanonCheckbutton = Checkbutton(checkBoxFrame, text="Include Ganon's Tower and Pyramid Hole in shuffle pool",
+                                          variable=shuffleGanonVar)
     hintsVar = IntVar()
-    hintsVar.set(1) #set default
+    hintsVar.set(1)  # set default
     hintsCheckbutton = Checkbutton(checkBoxFrame, text="Include Helpful Hints", variable=hintsVar)
     customVar = IntVar()
     customCheckbutton = Checkbutton(checkBoxFrame, text="Use custom item pool", variable=customVar)
     balancingVar = IntVar()
-    balancingVar.set(1) #set default
+    balancingVar.set(1)  # set default
     balancingCheckbutton = Checkbutton(checkBoxFrame, text="Multiworld Progression Balancing", variable=balancingVar)
+    patchesVar = IntVar()
+    patchesVar.set(1)  # set default
+    patchesCheckbutton = Checkbutton(checkBoxFrame, text="Create Delta Patches", variable=patchesVar)
     createSpoilerCheckbutton.pack(expand=True, anchor=W)
     suppressRomCheckbutton.pack(expand=True, anchor=W)
     openpyramidCheckbutton.pack(expand=True, anchor=W)
@@ -95,13 +111,14 @@ def guiMain(args=None):
     mcsbLabel.grid(row=0, column=0)
     mapshuffleCheckbutton.grid(row=0, column=1)
     compassshuffleCheckbutton.grid(row=0, column=2)
-    keyshuffleCheckbutton.grid(row=0, column=3)
     bigkeyshuffleCheckbutton.grid(row=0, column=4)
+    keyshuffleFrame.pack(expand=True, anchor=W)
     retroCheckbutton.pack(expand=True, anchor=W)
     shuffleGanonCheckbutton.pack(expand=True, anchor=W)
     hintsCheckbutton.pack(expand=True, anchor=W)
     customCheckbutton.pack(expand=True, anchor=W)
     balancingCheckbutton.pack(expand=True, anchor=W)
+    patchesCheckbutton.pack(expand=True, anchor=W)
 
     romOptionsFrame = LabelFrame(rightHalfFrame, text="Rom options")
     romOptionsFrame.columnconfigure(0, weight=1)
@@ -141,7 +158,7 @@ def guiMain(args=None):
     spriteEntry.pack(side=LEFT)
     spriteSelectButton.pack(side=LEFT)
 
-    quickSwapVar = IntVar()
+    quickSwapVar = IntVar(value=1)
     quickSwapCheckbutton = Checkbutton(romOptionsFrame, text="L/R Quickswapping", variable=quickSwapVar)
     quickSwapCheckbutton.grid(row=1, column=0, sticky=E)
 
@@ -320,7 +337,7 @@ def guiMain(args=None):
     algorithmFrame = Frame(drowDownFrame)
     algorithmVar = StringVar()
     algorithmVar.set('balanced')
-    algorithmOptionMenu = OptionMenu(algorithmFrame, algorithmVar, 'freshness', 'flood', 'vt21', 'vt22', 'vt25', 'vt26', 'balanced')
+    algorithmOptionMenu = OptionMenu(algorithmFrame, algorithmVar, 'flood', 'vt25', 'vt26', 'balanced')
     algorithmOptionMenu.pack(side=RIGHT)
     algorithmLabel = Label(algorithmFrame, text='Item distribution algorithm')
     algorithmLabel.pack(side=LEFT)
@@ -328,10 +345,13 @@ def guiMain(args=None):
     shuffleFrame = Frame(drowDownFrame)
     shuffleVar = StringVar()
     shuffleVar.set('vanilla')
-    shuffleOptionMenu = OptionMenu(shuffleFrame, shuffleVar, 'vanilla', 'simple', 'restricted', 'full', 'crossed', 'insanity', 'restricted_legacy', 'full_legacy', 'madness_legacy', 'insanity_legacy', 'dungeonsfull', 'dungeonssimple')
+    shuffleOptionMenu = OptionMenu(shuffleFrame, shuffleVar, 'vanilla', 'simple', 'restricted', 'full', 'crossed',
+                                   'insanity', 'restricted_legacy', 'full_legacy', 'madness_legacy', 'insanity_legacy',
+                                   'dungeonsfull', 'dungeonssimple')
     shuffleOptionMenu.pack(side=RIGHT)
     shuffleLabel = Label(shuffleFrame, text='Entrance shuffle algorithm')
     shuffleLabel.pack(side=LEFT)
+
 
     modeFrame.pack(expand=True, anchor=E)
     logicFrame.pack(expand=True, anchor=E)
@@ -352,62 +372,88 @@ def guiMain(args=None):
 
 
     enemizerPathFrame = Frame(enemizerFrame)
-    enemizerPathFrame.grid(row=0, column=0, columnspan=3, sticky=W+E, padx=3)
+    enemizerPathFrame.grid(row=0, column=0, columnspan=4, sticky=W + E, padx=3)
     enemizerCLIlabel = Label(enemizerPathFrame, text="EnemizerCLI path: ")
     enemizerCLIlabel.pack(side=LEFT)
     enemizerCLIpathVar = StringVar(value="EnemizerCLI/EnemizerCLI.Core")
     enemizerCLIpathEntry = Entry(enemizerPathFrame, textvariable=enemizerCLIpathVar)
     enemizerCLIpathEntry.pack(side=LEFT, expand=True, fill=X)
+
     def EnemizerSelectPath():
         path = filedialog.askopenfilename(filetypes=[("EnemizerCLI executable", "*EnemizerCLI*")])
         if path:
             enemizerCLIpathVar.set(path)
+
     enemizerCLIbrowseButton = Button(enemizerPathFrame, text='...', command=EnemizerSelectPath)
     enemizerCLIbrowseButton.pack(side=LEFT)
 
-    potShuffleVar = IntVar()
-    potShuffleButton = Checkbutton(enemizerFrame, text="Pot shuffle", variable=potShuffleVar)
-    potShuffleButton.grid(row=0, column=3)
-
     enemizerEnemyFrame = Frame(enemizerFrame)
     enemizerEnemyFrame.grid(row=1, column=0, pady=5)
-    enemizerEnemyLabel = Label(enemizerEnemyFrame, text='Enemy shuffle')
-    enemizerEnemyLabel.pack(side=LEFT)
-    enemyShuffleVar = StringVar()
-    enemyShuffleVar.set('none')
-    enemizerEnemyOption = OptionMenu(enemizerEnemyFrame, enemyShuffleVar, 'none', 'shuffled', 'chaos', 'chaosthieves')
-    enemizerEnemyOption.pack(side=LEFT)
+
+    enemyShuffleVar = IntVar()
+    enemizerEnemyButton = Checkbutton(enemizerEnemyFrame, text="Enemy shuffle", variable=enemyShuffleVar)
+    enemizerEnemyButton.pack(side=LEFT)
 
     enemizerBossFrame = Frame(enemizerFrame)
     enemizerBossFrame.grid(row=1, column=1)
-    enemizerBossLabel = Label(enemizerBossFrame, text='Boss shuffle')
-    enemizerBossLabel.pack(side=LEFT)
     enemizerBossVar = StringVar()
     enemizerBossVar.set('none')
     enemizerBossOption = OptionMenu(enemizerBossFrame, enemizerBossVar, 'none', 'basic', 'normal', 'chaos',
-                                    "singularity", "duality")
+                                    "singularity")
+    enemizerBossLabel = Label(enemizerBossFrame, text='Boss shuffle')
+    enemizerBossLabel.pack(side=LEFT)
     enemizerBossOption.pack(side=LEFT)
 
     enemizerDamageFrame = Frame(enemizerFrame)
     enemizerDamageFrame.grid(row=1, column=2)
-    enemizerDamageLabel = Label(enemizerDamageFrame, text='Enemy damage')
-    enemizerDamageLabel.pack(side=LEFT)
     enemizerDamageVar = StringVar()
     enemizerDamageVar.set('default')
     enemizerDamageOption = OptionMenu(enemizerDamageFrame, enemizerDamageVar, 'default', 'shuffled', 'chaos')
+    enemizerDamageLabel = Label(enemizerDamageFrame, text='Enemy damage')
+    enemizerDamageLabel.pack(side=LEFT)
     enemizerDamageOption.pack(side=LEFT)
 
     enemizerHealthFrame = Frame(enemizerFrame)
     enemizerHealthFrame.grid(row=1, column=3)
-    enemizerHealthLabel = Label(enemizerHealthFrame, text='Enemy health')
-    enemizerHealthLabel.pack(side=LEFT)
     enemizerHealthVar = StringVar()
     enemizerHealthVar.set('default')
-    enemizerHealthOption = OptionMenu(enemizerHealthFrame, enemizerHealthVar, 'default', 'easy', 'normal', 'hard', 'expert')
+    enemizerHealthOption = OptionMenu(enemizerHealthFrame, enemizerHealthVar, 'default', 'easy', 'normal', 'hard',
+                                      'expert')
+    enemizerHealthLabel = Label(enemizerHealthFrame, text='Enemy health')
+    enemizerHealthLabel.pack(side=LEFT)
     enemizerHealthOption.pack(side=LEFT)
 
-    multiworldframe = LabelFrame(randomizerWindow, text="Multiworld", padx=5, pady=2)
+    potShuffleVar = IntVar()
+    potShuffleButton = Checkbutton(enemizerFrame, text="Pot shuffle", variable=potShuffleVar)
+    potShuffleButton.grid(row=2, column=0, sticky=W)
 
+    tileShuffleVar = IntVar()
+    tileShuffleButton = Checkbutton(enemizerFrame, text="Tile shuffle", variable=tileShuffleVar)
+    tileShuffleButton.grid(row=2, column=1, sticky=W)
+
+    bushShuffleVar = IntVar()
+    bushShuffleButton = Checkbutton(enemizerFrame, text="Bush shuffle", variable=bushShuffleVar)
+    bushShuffleButton.grid(row=2, column=2, sticky=W)
+
+    killableThievesVar = IntVar()
+    killable_thievesShuffleButton = Checkbutton(enemizerFrame, text="Killable Thieves", variable=killableThievesVar)
+    killable_thievesShuffleButton.grid(row=2, column=3, sticky=W)
+
+    shopframe = LabelFrame(randomizerWindow, text="Shops", padx=5, pady=2)
+
+    shopPriceShuffleVar = IntVar()
+    shopPriceShuffleButton = Checkbutton(shopframe, text="Random Prices", variable=shopPriceShuffleVar)
+    shopPriceShuffleButton.grid(row=0, column=0, sticky=W)
+
+    shopShuffleVar = IntVar()
+    shopShuffleButton = Checkbutton(shopframe, text="Shuffle Inventories", variable=shopShuffleVar)
+    shopShuffleButton.grid(row=0, column=1, sticky=W)
+
+    shopUpgradeShuffleVar = IntVar()
+    shopUpgradeShuffleButton = Checkbutton(shopframe, text="Lootable Upgrades", variable=shopUpgradeShuffleVar)
+    shopUpgradeShuffleButton.grid(row=0, column=2, sticky=W)
+
+    multiworldframe = LabelFrame(randomizerWindow, text="Multiworld", padx=5, pady=2)
 
     worldLabel = Label(multiworldframe, text='Worlds')
     worldVar = StringVar()
@@ -455,11 +501,12 @@ def guiMain(args=None):
         guiargs.heartcolor = heartcolorVar.get()
         guiargs.fastmenu = fastMenuVar.get()
         guiargs.create_spoiler = bool(createSpoilerVar.get())
+        guiargs.skip_playthrough = not bool(createSpoilerVar.get())
         guiargs.suppress_rom = bool(suppressRomVar.get())
-        guiargs.openpyramid = bool(openpyramidVar.get())
+        guiargs.open_pyramid = bool(openpyramidVar.get())
         guiargs.mapshuffle = bool(mapshuffleVar.get())
         guiargs.compassshuffle = bool(compassshuffleVar.get())
-        guiargs.keyshuffle = bool(keyshuffleVar.get())
+        guiargs.keyshuffle = {"on": True, "universal": "universal", "off": False}[keyshuffleVar.get()]
         guiargs.bigkeyshuffle = bool(bigkeyshuffleVar.get())
         guiargs.retro = bool(retroVar.get())
         guiargs.quickswap = bool(quickSwapVar.get())
@@ -470,21 +517,50 @@ def guiMain(args=None):
         guiargs.hints = bool(hintsVar.get())
         guiargs.enemizercli = enemizerCLIpathVar.get()
         guiargs.shufflebosses = enemizerBossVar.get()
-        guiargs.shuffleenemies = enemyShuffleVar.get()
+        guiargs.enemy_shuffle = enemyShuffleVar.get()
+        guiargs.bush_shuffle = bushShuffleVar.get()
+        guiargs.tile_shuffle = tileShuffleVar.get()
+        guiargs.killable_thieves = killableThievesVar.get()
         guiargs.enemy_health = enemizerHealthVar.get()
         guiargs.enemy_damage = enemizerDamageVar.get()
         guiargs.shufflepots = bool(potShuffleVar.get())
         guiargs.custom = bool(customVar.get())
-        guiargs.customitemarray = [int(bowVar.get()), int(silverarrowVar.get()), int(boomerangVar.get()), int(magicboomerangVar.get()), int(hookshotVar.get()), int(mushroomVar.get()), int(magicpowderVar.get()), int(firerodVar.get()),
-                                   int(icerodVar.get()), int(bombosVar.get()), int(etherVar.get()), int(quakeVar.get()), int(lampVar.get()), int(hammerVar.get()), int(shovelVar.get()), int(fluteVar.get()), int(bugnetVar.get()),
-                                   int(bookVar.get()), int(bottleVar.get()), int(somariaVar.get()), int(byrnaVar.get()), int(capeVar.get()), int(mirrorVar.get()), int(bootsVar.get()), int(powergloveVar.get()), int(titansmittVar.get()),
-                                   int(proggloveVar.get()), int(flippersVar.get()), int(pearlVar.get()), int(heartpieceVar.get()), int(fullheartVar.get()), int(sancheartVar.get()), int(sword1Var.get()), int(sword2Var.get()),
-                                   int(sword3Var.get()), int(sword4Var.get()), int(progswordVar.get()), int(shield1Var.get()), int(shield2Var.get()), int(shield3Var.get()), int(progshieldVar.get()), int(bluemailVar.get()),
-                                   int(redmailVar.get()), int(progmailVar.get()), int(halfmagicVar.get()), int(quartermagicVar.get()), int(bcap5Var.get()), int(bcap10Var.get()), int(acap5Var.get()), int(acap10Var.get()),
-                                   int(arrow1Var.get()), int(arrow10Var.get()), int(bomb1Var.get()), int(bomb3Var.get()), int(rupee1Var.get()), int(rupee5Var.get()), int(rupee20Var.get()), int(rupee50Var.get()), int(rupee100Var.get()),
-                                   int(rupee300Var.get()), int(rupoorVar.get()), int(blueclockVar.get()), int(greenclockVar.get()), int(redclockVar.get()), int(progbowVar.get()), int(bomb10Var.get()), int(triforcepieceVar.get()),
-                                   int(triforcecountVar.get()), int(triforceVar.get()),  int(rupoorcostVar.get()), int(universalkeyVar.get())]
+        guiargs.triforce_pieces_required = min(90, int(triforcecountVar.get()))
+        guiargs.triforce_pieces_available = min(90, int(triforcepieceVar.get()))
+        guiargs.shop_shuffle = ""
+        if shopShuffleVar.get():
+            guiargs.shop_shuffle += "i"
+        if shopPriceShuffleVar.get():
+            guiargs.shop_shuffle += "p"
+        if shopUpgradeShuffleVar.get():
+            guiargs.shop_shuffle += "u"
+        guiargs.customitemarray = [int(bowVar.get()), int(silverarrowVar.get()), int(boomerangVar.get()),
+                                   int(magicboomerangVar.get()), int(hookshotVar.get()), int(mushroomVar.get()),
+                                   int(magicpowderVar.get()), int(firerodVar.get()),
+                                   int(icerodVar.get()), int(bombosVar.get()), int(etherVar.get()), int(quakeVar.get()),
+                                   int(lampVar.get()), int(hammerVar.get()), int(shovelVar.get()), int(fluteVar.get()),
+                                   int(bugnetVar.get()),
+                                   int(bookVar.get()), int(bottleVar.get()), int(somariaVar.get()), int(byrnaVar.get()),
+                                   int(capeVar.get()), int(mirrorVar.get()), int(bootsVar.get()),
+                                   int(powergloveVar.get()), int(titansmittVar.get()),
+                                   int(proggloveVar.get()), int(flippersVar.get()), int(pearlVar.get()),
+                                   int(heartpieceVar.get()), int(fullheartVar.get()), int(sancheartVar.get()),
+                                   int(sword1Var.get()), int(sword2Var.get()),
+                                   int(sword3Var.get()), int(sword4Var.get()), int(progswordVar.get()),
+                                   int(shield1Var.get()), int(shield2Var.get()), int(shield3Var.get()),
+                                   int(progshieldVar.get()), int(bluemailVar.get()),
+                                   int(redmailVar.get()), int(progmailVar.get()), int(halfmagicVar.get()),
+                                   int(quartermagicVar.get()), int(bcap5Var.get()), int(bcap10Var.get()),
+                                   int(acap5Var.get()), int(acap10Var.get()),
+                                   int(arrow1Var.get()), int(arrow10Var.get()), int(bomb1Var.get()),
+                                   int(bomb3Var.get()), int(rupee1Var.get()), int(rupee5Var.get()),
+                                   int(rupee20Var.get()), int(rupee50Var.get()), int(rupee100Var.get()),
+                                   int(rupee300Var.get()), int(rupoorVar.get()), int(blueclockVar.get()),
+                                   int(greenclockVar.get()), int(redclockVar.get()), int(progbowVar.get()),
+                                   int(bomb10Var.get()), int(triforceVar.get()),
+                                   int(rupoorcostVar.get()), int(universalkeyVar.get())]
         guiargs.rom = romVar.get()
+        guiargs.create_diff = patchesVar.get()
         guiargs.sprite = sprite
         # get default values for missing parameters
         for k,v in vars(parse_arguments(['--multi', str(guiargs.multi)])).items():
@@ -504,9 +580,9 @@ def guiMain(args=None):
                 main(seed=guiargs.seed, args=guiargs)
         except Exception as e:
             logging.exception(e)
-            messagebox.showerror(title="Error while creating seed", message=str(e))
+            messagebox.showerror(title="Error while creating multiworld", message=str(e))
         else:
-            messagebox.showinfo(title="Success", message="Rom patched successfully")
+            messagebox.showinfo(title="Success", message="Multiworld created successfully")
 
     generateButton = Button(farBottomFrame, text='Generate Patched Rom', command=generateRom)
 
@@ -527,6 +603,7 @@ def guiMain(args=None):
     topFrame.pack(side=TOP)
     multiworldframe.pack(side=BOTTOM, expand=True, fill=X)
     enemizerFrame.pack(side=BOTTOM, fill=BOTH)
+    shopframe.pack(side=BOTTOM, expand=True, fill=X)
 
     # Adjuster Controls
 
@@ -534,7 +611,7 @@ def guiMain(args=None):
     rightHalfFrame2 = Frame(topFrame2)
     checkBoxFrame2 = Frame(rightHalfFrame2)
 
-    quickSwapCheckbutton2 = Checkbutton(checkBoxFrame2, text="Enabled L/R Item quickswapping", variable=quickSwapVar)
+    quickSwapCheckbutton2 = Checkbutton(checkBoxFrame2, text="L/R Item quickswapping", variable=quickSwapVar)
     disableMusicCheckbutton2 = Checkbutton(checkBoxFrame2, text="Disable game music", variable=disableMusicVar)
 
     quickSwapCheckbutton2.pack(expand=True, anchor=W)
@@ -1192,7 +1269,7 @@ def guiMain(args=None):
 
     triforcepieceFrame = Frame(itemList5)
     triforcepieceLabel = Label(triforcepieceFrame, text='Triforce Piece')
-    triforcepieceVar = StringVar(value='0')
+    triforcepieceVar = StringVar(value='30')
     triforcepieceEntry = Entry(triforcepieceFrame, textvariable=triforcepieceVar, width=3, validate='all', vcmd=vcmd)
     triforcepieceFrame.pack()
     triforcepieceLabel.pack(anchor=W, side=LEFT, padx=(0,55))
@@ -1200,7 +1277,7 @@ def guiMain(args=None):
 
     triforcecountFrame = Frame(itemList5)
     triforcecountLabel = Label(triforcecountFrame, text='Triforce Pieces Required')
-    triforcecountVar = StringVar(value='0')
+    triforcecountVar = StringVar(value='20')
     triforcecountEntry = Entry(triforcecountFrame, textvariable=triforcecountVar, width=3, validate='all', vcmd=vcmd)
     triforcecountFrame.pack()
     triforcecountLabel.pack(anchor=W, side=LEFT, padx=(0,0))
@@ -1400,8 +1477,6 @@ class SpriteSelector(object):
                 current_sprites = [os.path.basename(file) for file in glob(self.alttpr_sprite_dir + '/*')]
                 alttpr_sprites = [(sprite['file'], os.path.basename(urlparse(sprite['file']).path)) for sprite in sprites_arr]
                 needed_sprites = [(sprite_url, filename) for (sprite_url, filename) in alttpr_sprites if filename not in current_sprites]
-                bundled_sprites = [os.path.basename(file) for file in glob(self.local_alttpr_sprite_dir + '/*')]
-                # todo: eventually use the above list to avoid downloading any sprites that we already have cached in the bundle.
 
                 alttpr_filenames = [filename for (_, filename) in alttpr_sprites]
                 obsolete_sprites = [sprite for sprite in current_sprites if sprite not in alttpr_filenames]
@@ -1411,27 +1486,50 @@ class SpriteSelector(object):
                 task.queue_event(finished)
                 return
 
-            updated = 0
-            for (sprite_url, filename) in needed_sprites:
-                try:
-                    task.update_status("Downloading needed sprite %g/%g" % (updated + 1, len(needed_sprites)))
-                    target = os.path.join(self.alttpr_sprite_dir, filename)
-                    with urlopen(sprite_url) as response, open(target, 'wb') as out:
-                        shutil.copyfileobj(response, out)
-                except Exception as e:
-                    resultmessage = "Error downloading sprite. Not all sprites updated.\n\n%s: %s" % (type(e).__name__, e)
-                    successful = False
-                updated += 1
 
-            deleted = 0
-            for sprite in obsolete_sprites:
-                try:
-                    task.update_status("Removing obsolete sprite %g/%g" % (deleted + 1, len(obsolete_sprites)))
-                    os.remove(os.path.join(self.alttpr_sprite_dir, sprite))
-                except Exception as e:
-                    resultmessage = "Error removing obsolete sprite. Not all sprites updated.\n\n%s: %s" % (type(e).__name__, e)
-                    successful = False
-                deleted += 1
+            def dl(sprite_url, filename):
+                target = os.path.join(self.alttpr_sprite_dir, filename)
+                with urlopen(sprite_url) as response, open(target, 'wb') as out:
+                    shutil.copyfileobj(response, out)
+
+            def rem(sprite):
+                os.remove(os.path.join(self.alttpr_sprite_dir, sprite))
+
+
+            with ThreadPoolExecutor() as pool:
+                dl_tasks = []
+                rem_tasks = []
+
+                for (sprite_url, filename) in needed_sprites:
+                    dl_tasks.append(pool.submit(dl, sprite_url, filename))
+
+                for sprite in obsolete_sprites:
+                    rem_tasks.append(pool.submit(rem, sprite))
+
+                deleted = 0
+                updated = 0
+
+                for dl_task in as_completed(dl_tasks):
+                    updated += 1
+                    task.update_status("Downloading needed sprite %g/%g" % (updated, len(needed_sprites)))
+                    try:
+                        dl_task.result()
+                    except Exception as e:
+                        logging.exception(e)
+                        resultmessage = "Error downloading sprite. Not all sprites updated.\n\n%s: %s" % (
+                        type(e).__name__, e)
+                        successful = False
+
+                for rem_task in as_completed(rem_tasks):
+                    deleted += 1
+                    task.update_status("Removing obsolete sprite %g/%g" % (deleted, len(obsolete_sprites)))
+                    try:
+                        rem_task.result()
+                    except Exception as e:
+                        logging.exception(e)
+                        resultmessage = "Error removing obsolete sprite. Not all sprites updated.\n\n%s: %s" % (
+                        type(e).__name__, e)
+                        successful = False
 
             if successful:
                 resultmessage = "alttpr sprites updated successfully"
@@ -1481,25 +1579,25 @@ class SpriteSelector(object):
     @property
     def alttpr_sprite_dir(self):
         if is_bundled():
-            return output_path("sprites/alttpr")
+            return output_path("sprites", "alttpr")
         return self.local_alttpr_sprite_dir
 
     @property
     def local_alttpr_sprite_dir(self):
-        return local_path("data/sprites/alttpr")
+        return local_path("data", "sprites", "alttpr")
 
     @property
     def custom_sprite_dir(self):
         if is_bundled():
-            return output_path("sprites/custom")
+            return output_path("sprites", "custom")
         return self.local_custom_sprite_dir
 
     @property
     def local_custom_sprite_dir(self):
-        return local_path("data/sprites/custom")
+        return local_path("data", "sprites", "custom")
 
 
-def get_image_for_sprite(sprite):
+def get_image_for_sprite(sprite, gif_only: bool = False):
     if not sprite.valid:
         return None
     height = 24
@@ -1595,6 +1693,9 @@ def get_image_for_sprite(sprite):
         return gif
 
     gif_data = make_gif(draw_sprite_into_gif)
+    if gif_only:
+        return gif_data
+
     image = PhotoImage(data=gif_data)
 
     return image.zoom(2)

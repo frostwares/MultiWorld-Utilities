@@ -6,12 +6,15 @@ def tuplize_version(version: str) -> typing.Tuple[int, ...]:
     return tuple(int(piece, 10) for piece in version.split("."))
 
 
-__version__ = "2.5.0"
+__version__ = "2.5.4"
 _version_tuple = tuplize_version(__version__)
 
 import os
 import subprocess
 import sys
+import pickle
+import io
+import builtins
 
 import functools
 
@@ -43,10 +46,12 @@ def snes_to_pc(value):
 
 def parse_player_names(names, players, teams):
     names = tuple(n for n in (n.strip() for n in names.split(",")) if n)
+    if len(names) != len(set(names)):
+        raise ValueError("Duplicate Player names is not supported.")
     ret = []
     while names or len(ret) < teams:
         team = [n[:16] for n in names[:players]]
-        # where does the 16 character limit come from?
+        # 16 bytes in rom per player, which will map to more in unicode, but those characters later get filtered
         while len(team) != players:
             team.append(f"Player{len(team) + 1}")
         ret.append(team)
@@ -59,9 +64,9 @@ def is_bundled() -> bool:
     return getattr(sys, 'frozen', False)
 
 
-def local_path(path):
+def local_path(*path):
     if local_path.cached_path:
-        return os.path.join(local_path.cached_path, path)
+        return os.path.join(local_path.cached_path, *path)
 
     elif is_bundled():
         if hasattr(sys, "_MEIPASS"):
@@ -75,15 +80,16 @@ def local_path(path):
         import __main__
         local_path.cached_path = os.path.dirname(os.path.abspath(__main__.__file__))
 
-    return os.path.join(local_path.cached_path, path)
+    return os.path.join(local_path.cached_path, *path)
 
 local_path.cached_path = None
 
-def output_path(path):
+
+def output_path(*path):
     if output_path.cached_path:
-        return os.path.join(output_path.cached_path, path)
-    output_path.cached_path = local_path("output")
-    path = os.path.join(output_path.cached_path, path)
+        return os.path.join(output_path.cached_path, *path)
+    output_path.cached_path = local_path(get_options()["general_options"]["output_path"])
+    path = os.path.join(output_path.cached_path, *path)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
 
@@ -291,3 +297,23 @@ def get_unique_identifier():
     uuid = uuid.getnode()
     persistent_store("client", "uuid", uuid)
     return uuid
+
+
+safe_builtins = {
+    'set',
+    'frozenset',
+}
+
+
+class RestrictedUnpickler(pickle.Unpickler):
+    def find_class(self, module, name):
+        if module == "builtins" and name in safe_builtins:
+            return getattr(builtins, name)
+        # Forbid everything else.
+        raise pickle.UnpicklingError("global '%s.%s' is forbidden" %
+                                     (module, name))
+
+
+def restricted_loads(s):
+    """Helper function analogous to pickle.loads()."""
+    return RestrictedUnpickler(io.BytesIO(s)).load()
